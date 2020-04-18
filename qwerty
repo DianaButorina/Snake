@@ -1,485 +1,178 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.Linq;
-using System.Text;
-using System.Windows.Forms;
-using System.Collections;
-
-namespace WindowsFormsApplication2
+class Game
 {
-    public partial class Form1 : Form
+    static readonly int x = 80;
+    static readonly int y = 26;
+
+    static void Main()
     {
-        Snake snake;
-        Field buffield;
-        Field field;
-        Graphics g;
-        Game game;
-        Type[,] gamefield;
-        public Form1()
-        {
-            InitializeComponent();
-            g = pictureBox1.CreateGraphics();
-            snake = new Snake(new List<Point> { new Point(0, 0)}, Direction.None);
-            buffield = new Field();
-            gamefield = new Type[buffield.Height, buffield.Weight];
-            for (int i = 0; i < gamefield.GetLength(0); i++)
-            {
-                for (int j = 0; j < gamefield.GetLength(1); j++)
-                {
-                    gamefield[i, j] = Type.Empty;
-                }
-            }
-            field = new Field(gamefield, Color.LightGray, Color.Red, Color.Green, Color.Gold);
-            game = new Game(snake, field, 0);
-        }
+        Console.SetWindowSize(x + 1, y + 1);
+        Console.SetBufferSize(x + 1, y + 1);
+        Console.CursorVisible = false;
+    }// Main()
+}// class Game
+struct Point
+{
+    public int x { get; set; }
+    public int y { get; set; }
+    public char ch { get; set; }
 
-        private void button1_Click(object sender, EventArgs e)
-        {
-            timer1.Start();
-            button1.Visible = false;
-        }
+    public static implicit operator Point((int, int, char) value) =>
+        new Point { x = value.Item1, y = value.Item2, ch = value.Item3 };
 
-        private void timer1_Tick(object sender, EventArgs e)
-        {
-            game.Draw(g);
-            game.CreateNewdot();
-            if (game.CanMove())
-            {
-                snake.Move();
-                game.Checkdot();
-            }
-            else
-                MessageBox.Show("Game Over");
-        }            
+    public void Draw()
+    {
+        DrawPoint(ch);
     }
-    // Направление движения змеи, None - если стоит(вначале или если сделать с паузой)
-    public enum Direction
+    public void Clear()
     {
-     None, Up, Down, Right, Left
-    };
-
-    public class Snake
-    {
-        private Direction direction;// направление
-        private List<Point> body;// массив точек для звеньев змеи(получается что точка будет задавать координату верхнего левого угла звена)
-        private const int elementSize = 25;// размер звена(сторона квадрата или радиус круга), а также расстояния между точками
-
-        #region Properties
-        public Snake(List<Point> body, Direction direction)
-        {
-            this.body = body;
-            this.direction = direction;
-        }
-
-
-        public int ElementSize
-        {
-            get
-            {
-                return elementSize;
-            }
-        }
-
-        public Direction Direction
-        {
-            get
-            {
-                return direction;
-            }
-            set
-            {
-                direction = value;
-            }
-        }
-
-        public List<Point> Body
-        {
-            get
-            {
-                return body;
-            }
-            set
-            {
-                body = value;
-            }
-        }
-        #endregion
-
-        public void ChangeDirection(Direction direction)
-        {
-            this.direction = direction;
-        }
-
-        public void Move()
-        {
-            //В зависимости от направления движения одна из координат головы меняется на 25(elementSize)
-            //точка с новыми координатами будет новой головой, а потом добавляем в коллекцию все элементы
-            //из предыдущего положения змеи, кроме последнего элемента
-
-            // В первом(нулевом елементе коллекции находятся координаты головы)
-            int x = body[0].X;
-            int y = body[0].Y;
-           
-            List<Point> bufferBody = body;// промежуточный массив
-           
-                switch (this.direction)
-                {
-                    case Direction.None:
-                        break;
-                    case Direction.Up:
-                        {
-                            body.Clear();
-                            y -= elementSize;
-                            body[0] = new Point(x, y);
-                            for (int i = 0; i < bufferBody.Count - 1; i++)
-                            {
-                                body.Add(bufferBody[i]);
-                            }
-                        }
-                        break;
-                    case Direction.Down:
-                        {
-                            body.Clear();
-                            y += elementSize;
-                            body[0] = new Point(x, y);
-                            for (int i = 0; i < bufferBody.Count - 1; i++)
-                            {
-                                body.Add(bufferBody[i]);
-                            }
-                        }
-                        break;
-                    case Direction.Right:
-                        {
-                            body.Clear();
-                            x += elementSize;
-                            body[0] = new Point(x, y);
-                            for (int i = 0; i < bufferBody.Count - 1; i++)
-                            {
-                                body.Add(bufferBody[i]);
-                            }
-                        }
-                        break;
-                    case Direction.Left:
-                        {
-                            body.Clear();
-                            x -= elementSize;
-                            body[0] = new Point(x, y);
-                            for (int i = 0; i < bufferBody.Count - 1; i++)
-                            {
-                                body.Add(bufferBody[i]);
-                            }
-                        }
-                        break;
-                }       
-        }
+        DrawPoint(' ');
     }
-
-    public enum Type// Тип клетки поля
+    private void DrawPoint(char _ch)
     {
-        Empty, Head, Element, dot
-    };
-    
-
-    public class Field
-    {
-        // ширина на высоту
-        private const int height = 10;
-        private const int weight = 20;
-
-        // разные цвета 
-        private Color emptyColor;
-        private Color headColor;
-        private Color elementColor;
-        private Color dotColor;
-
-        public Type[,] fieldBody;// массив, где хранятся все клетки игрового поля
-
-        public Field()
-        {
-
-        }
-        public Field(Type[,] fieldBody, Color emptyColor, Color headColor, Color elementColor, Color dotColor)
-        {
-            this.fieldBody = fieldBody;
-            this.emptyColor = emptyColor;
-            this.headColor = headColor;
-            this.elementColor = elementColor;
-            this.dotColor = dotColor;
-        }
-
-        #region Properties
-        public int Height
-        {
-            get
-            {
-                return height;
-            }
-        }
-        public int Weight
-        {
-            get
-            {
-                return weight;
-            }
-        }
-        public Color EmptyColor
-        {
-            get
-            {
-                return emptyColor;
-            }
-            set
-            {
-                emptyColor = value;
-            }
-        }
-        public Color HeadColor
-        {
-            get
-            {
-                return headColor;
-            }
-            set
-            {
-                headColor = value;
-            }
-        }
-        public Color ElementColor
-        {
-            get
-            {
-                return elementColor;
-            }
-            set
-            {
-                elementColor = value;
-            }
-        }
-        public Color FLowerColor
-        {
-            get
-            {
-                return flowerColor;
-            }
-            set
-            {
-                flowerColor = value;
-            }
-        }
-        public Type[,] FieldBody
-        {
-            get
-            {
-                return fieldBody;
-            }
-            set
-            {
-                fieldBody = value;
-            }
-        }
-        #endregion
-    }
-
-    public class Game
-    {
-        private Snake snake;
-        private Field field;
-
-        private int numberOfdots;
-
-        public Game(Snake snake, Field field, int numberOfFdots)
-        {
-            this.snake = snake;
-            this.field = field;
-            this.numberOfdots = numberOfdots;
-        }
-
-        #region Properties
-        public Snake Snake
-        {
-            get
-            {
-                return snake;
-            }
-            set
-            {
-                snake = value;
-            }
-        }
-        public Field Field
-        {
-            get
-            {
-                return field;
-            }
-            set
-            {
-                field = value;
-            }
-        }
-
-        public int NumberOfFlowers
-        {
-            get
-            {
-                return numberOfFlowers;
-            }
-            set
-            {
-                numberOfFlowers = value;
-            }
-        }
-        #endregion
-
-        public void CreateNewdot()
-        {
-            if (numberOfdot == 0)
-            {
-                Random r = new Random();
-                //x = r.Next(field.Height);
-                //y = r.Next(field.Weight);
-                field.FieldBody[r.Next(field.Height), r.Next(field.Weight)] = Type.dot;
-                numberOfdots++;
-            }
-        }
-        public void Checkdot()
-
-        {
-            if (field.FieldBody[snake.Body[0].X, snake.Body[0].Y] == Type.dot)
-            {
-                if (snake.Body.Count == 1)
-                {
-                    int x0 = snake.Body[0].X;
-                    int y0 = snake.Body[0].Y;
-                    switch (snake.Direction)
-                    {
-                        case Direction.None:
-                            break;
-                        case Direction.Up:
-                            snake.Body.Add(new Point(x0, y0 + snake.ElementSize));
-                            break;
-                        case Direction.Down:
-                            snake.Body.Add(new Point(x0, y0 - snake.ElementSize));
-                            break;
-                        case Direction.Right:
-                            snake.Body.Add(new Point(x0 - snake.ElementSize, y0));
-                            break;
-                        case Direction.Left:
-                            snake.Body.Add(new Point(x0 + snake.ElementSize, y0));
-                            break;
-                    }
-                }
-                else
-                {
-                    // Последний елемент змеи
-                    int x1 = snake.Body[snake.Body.Count - 1].X;
-                    int y1 = snake.Body[snake.Body.Count - 1].Y;
-
-                    // предпоследний элемент змеи
-                    int x2 = snake.Body[snake.Body.Count - 2].X;
-                    int y2 = snake.Body[snake.Body.Count - 2].Y;
-
-                    switch (snake.Direction)
-                    {
-                        case Direction.None:
-                            break;
-                        case Direction.Up:
-                            {
-                                if (x1 == x2)
-                                    snake.Body.Add(new Point(x1, y1 + snake.ElementSize));
-                                if (y1 == y2 && x1 > x2)
-                                    snake.Body.Add(new Point(x1 + snake.ElementSize, y1));
-                                if (y1 == y2 && x1 < x2)
-                                    snake.Body.Add(new Point(x1 - snake.ElementSize, y1));
-                            }
-                            break;
-                        case Direction.Down:
-                            {
-                                if (x1 == x2)
-                                    snake.Body.Add(new Point(x1, y1 - snake.ElementSize));
-                                if (y1 == y2 && x1 > x2)
-                                    snake.Body.Add(new Point(x1 + snake.ElementSize, y1));
-                                if (y1 == y2 && x1 < x2)
-                                    snake.Body.Add(new Point(x1 - snake.ElementSize, y1));
-                            }
-                            break;
-                        case Direction.Right:
-                            {
-                                if (y1 == y2)
-                                    snake.Body.Add(new Point(x1 - snake.ElementSize, y1));
-                                if (x1 == x2 && y1 > y2)
-                                    snake.Body.Add(new Point(x1, y1 + snake.ElementSize));
-                                if (x1 == x2 && y1 < y2)
-                                    snake.Body.Add(new Point(x1, y1 - snake.ElementSize));
-                            }
-                            break;
-                        case Direction.Left:
-                            {
-                                if (y1 == y2)
-                                    snake.Body.Add(new Point(x1 + snake.ElementSize, y1));
-                                if (x1 == x2 && y1 > y2)
-                                    snake.Body.Add(new Point(x1, y1 + snake.ElementSize));
-                                if (x1 == x2 && y1 < y2)
-                                    snake.Body.Add(new Point(x1, y1 - snake.ElementSize));
-                            }
-                            break;
-                    }
-                }
-            }
-        }
-
-        public bool EatHerself()
-        { 
-            Point p0 = snake.Body[0];
-            List<Point> bufferSnakeBody = snake.Body;
-            bufferSnakeBody.RemoveAt(0);
-           
-            if (bufferSnakeBody.Contains(p0))
-                return true;
-            return false;
-        }
-
-        public bool CanMove()
-        {
-            // находится в пределах поля
-            if (snake.Body[0].X < 0 && snake.Body[0].X > field.Weight * snake.ElementSize)
-                return false;
-            if (snake.Body[0].Y < 0 && snake.Body[0].Y > field.Height * snake.ElementSize)
-                return false;
-
-
-            if (EatHerself())
-                return false;
-            return true;
-        }
-
-        public void Draw(Graphics g)
-        {
-            g.Clear(field.EmptyColor);
-            //SolidBrush brush1 = new SolidBrush(field.EmptyColor);
-            SolidBrush brush1 = new SolidBrush(field.ElementColor);
-            SolidBrush brush2 = new SolidBrush(field.HeadColor);
-            SolidBrush brush3 = new SolidBrush(field.dotColor);
-
-
-            //CreateNewdot();
-            for (int i = 0; i < field.fieldBody.GetLength(0); i++)
-            {
-                for (int j = 0; j < field.fieldBody.GetLength(1); j++)
-                {
-                    if (field.fieldBody[i, j] == Type.dot)
-                        g.FillEllipse(brush3, new Rectangle(i, j, 25, 25));
-                }
-            }
-
-            g.FillEllipse(brush2, new Rectangle(snake.Body[0].X, snake.Body[0].Y, 25, 25));
-            for (int k = 1; k < snake.Body.Count; k++)
-            {
-                g.FillEllipse(brush1, new Rectangle(snake.Body[k].X, snake.Body[k].Y, 25, 25));
-            }
-        }
+        Console.SetCursorPosition(x, y);
+        Console.Write(_ch);
     }
 }
+class Walls
+{
+    private char ch;
+    private List<Point> wall = new List<Point>();
+
+    public Walls(int x, int y, char ch)
+    {
+        this.ch = ch;
+        DrawHorizontal(x, 0);
+        DrawHorizontal(x, y);
+        DrawVertical(0, y);
+        DrawVertical(x, y);
+    }
+
+    private void DrawHorizontal(int x, int y)
+    {
+        for (int i = 0; i < x; i++)
+        {
+            Point p = (i, y, ch);
+            p.Draw();
+            wall.Add(p);
+        }
+    }
+    private void DrawVertical(int x, int y)
+    {
+        for (int i = 0; i < y; i++)
+        {
+            Point p = (x, i, ch);
+            p.Draw();
+            wall.Add(p);
+        }
+    }
+}// class Walls
+class FoodFactory
+{
+    int x;
+    int y;
+    char ch;
+    public Point food { get; private set; }
+
+    Random random = new Random();
+
+    public FoodFactory(int x, int y, char ch)
+    {
+        this.x = x;
+        this.y = y;
+        this.ch = ch;
+    }
+
+    public void CreateFood()
+    {
+        food = (random.Next(2, x - 2), random.Next(2, y - 2), ch);
+        food.Draw();
+    }
+}
+class Snake
+{
+    enum Direction
+    {
+        LEFT,
+        RIGHT,
+        UP,
+        DOWN
+    }
+    private List<Point> snake;
+    private Direction direction;
+    private int step = 1;
+    private Point tail;
+    private Point head;
+    bool rotate = true;
+    public Snake(int x, int y, int length)
+    {
+        direction = Direction.RIGHT;
+        snake = new List<Point>();
+        for (int i = x - length; i < x; i++)
+        {
+            Point p = (i, y, '*');
+            snake.Add(p);
+            p.Draw();
+        }
+
+    }
+    //Методы движения и поворота в зависимости он направления движения змейки.
+    public Point GetHead() => snake.Last();
+    public void Move()
+    {
+        head = GetNextPoint();
+        snake.Add(head);
+        tail = snake.First();
+        snake.Remove(tail);
+        tail.Clear();
+        head.Draw();
+        rotate = true;
+    }
+    public Point GetNextPoint()
+    {
+        Point p = GetHead();
+        switch (direction)
+        {
+            case Direction.LEFT:
+                p.x -= step;
+                break;
+            case Direction.RIGHT:
+                p.x += step;
+                break;
+            case Direction.UP:
+                p.y -= step;
+                break;
+            case Direction.DOWN:
+                p.y += step;
+                break;
+        }
+        return p;
+    }
+    public void Rotation(ConsoleKey key)
+    {
+        if (rotate)
+        {
+            switch (direction)
+            {
+                case Direction.LEFT:
+                case Direction.RIGHT:
+                    if (key == ConsoleKey.DownArrow)
+                        direction = Direction.DOWN;
+                    else if (key == ConsoleKey.UpArrow)
+                        direction = Direction.UP;
+                    break;
+                case Direction.UP:
+                case Direction.DOWN:
+                    if (key == ConsoleKey.LeftArrow)
+                        direction = Direction.LEFT;
+                    else if (key == ConsoleKey.RightArrow)
+                        direction = Direction.RIGHT;
+                    break;
+            }
+            rotate = false;
+        }
+    }
+}//class Snake
+
